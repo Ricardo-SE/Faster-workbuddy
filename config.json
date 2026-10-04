@@ -1,0 +1,25 @@
+{
+  "settings": {
+    "graceful_timeout_sec": 2,
+    "require_admin": true
+  },
+  "targets": [
+    {
+      "name": "WorkBuddy",
+      "display_name": "WorkBuddy",
+      "install_path_keywords": ["WorkBuddy", "workbuddy", ".workbuddy"],
+      "process_names": [
+        "WorkBuddy.exe",
+        "workbuddy.exe",
+        "node.exe",
+        "editor_sdk.exe",
+        "OpenConsole.exe",
+        "conpty.exe",
+        "agently-cli.exe",
+        "qm-helper.exe",
+        "editor_server.exe"
+      ],
+      "ports": [3080]
+    }
+  ]
+}
