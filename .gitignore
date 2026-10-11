@@ -15,15 +15,11 @@ dist/
 *.spec
 
 # ==========================================
-# 本地私有教学、协作与历史归档文档 (仅本地保留)
+# Local development & scratch
 # ==========================================
-AGENTS.md
-level.md
-break_black_box.md
-kill_rogue_agents_milestone.md
 archive/
-gemini-code-*.md
-handoff_*.md
+*.local.*
+*.draft.*
 
 # ==========================================
 # IDE 与编辑器配置

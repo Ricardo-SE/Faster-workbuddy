@@ -14,7 +14,7 @@ import time
 import customtkinter as ctk
 
 # 导入底层核心清理引擎与优化引擎
-from clean_core import scan_target_processes, clean_processes, load_config
+from clean_core import scan_target_processes, clean_processes, load_config, save_config, discover_and_sync_targets
 from optimize_core import get_storage_stats, run_full_purge_and_optimize
 
 # 设置全局外观主题：深色现代模式
@@ -27,9 +27,9 @@ class AgentCleanerApp(ctk.CTk):
         super().__init__()
 
         # 窗口基本属性
-        self.title("Agent Cleaner - 进程孤儿清理与启动加速")
-        self.geometry("620x470")
-        self.minsize(580, 380)
+        self.title("Agent Cleaner - 多 Agent 孤儿清理与启动加速")
+        self.geometry("660x490")
+        self.minsize(620, 400)
 
         # 状态映射字典与并发控制锁
         self.target_cards = {}
@@ -38,6 +38,12 @@ class AgentCleanerApp(ctk.CTk):
         self.is_optimizing = False
         self.auto_refresh_job = None
         self._scan_counter = 0
+
+        # 执行开机增量对账（路线一：自动嗅探与卸载自愈）
+        try:
+            discover_and_sync_targets(auto_save=True)
+        except Exception:
+            pass
 
         # 构建界面组件
         self._build_header()
@@ -53,46 +59,93 @@ class AgentCleanerApp(ctk.CTk):
         self.after(1200, self._auto_refresh_tick)
 
     def _build_header(self):
-        """顶部标题区域"""
+        """顶部标题区域与多 Agent 工具栏"""
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=24, pady=(20, 10))
+        header_frame.pack(fill="x", padx=20, pady=(16, 8))
+
+        # 左侧标题与副标题
+        title_box = ctk.CTkFrame(header_frame, fg_color="transparent")
+        title_box.pack(side="left", anchor="w")
 
         title_label = ctk.CTkLabel(
-            header_frame,
+            title_box,
             text="⚡ Agent Cleaner",
             font=ctk.CTkFont(size=22, weight="bold")
         )
         title_label.pack(anchor="w")
 
         sub_label = ctk.CTkLabel(
-            header_frame,
-            text="AI Agent 进程孤儿清理 · 物理内存回收 · 窗口状态防误杀感知",
+            title_box,
+            text="AI Agent 进程孤儿清理 · 物理内存回收 · 多生态规则感知",
             font=ctk.CTkFont(size=12),
             text_color="#888888"
         )
         sub_label.pack(anchor="w")
 
+        # 右侧操作按钮：更新agent目录 与 ➕ 添加自定义
+        btns_box = ctk.CTkFrame(header_frame, fg_color="transparent")
+        btns_box.pack(side="right", anchor="e")
+
+        add_btn = ctk.CTkButton(
+            btns_box,
+            text="➕ 添加自定义",
+            width=96,
+            height=32,
+            corner_radius=6,
+            fg_color="#1E4D2B",
+            hover_color="#14361E",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            command=self._open_add_agent_dialog
+        )
+        add_btn.pack(side="right", padx=(6, 0))
+
+        sync_btn = ctk.CTkButton(
+            btns_box,
+            text="🔄 更新agent目录",
+            width=120,
+            height=32,
+            corner_radius=6,
+            fg_color="#2C3E50",
+            hover_color="#34495E",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            command=self.sync_agent_catalog_async
+        )
+        sync_btn.pack(side="right", padx=(0, 6))
+
     def _build_cards_container(self):
         """中间可滚动的卡片列表"""
         self.scroll_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.scroll_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        self.scroll_frame.pack(fill="both", expand=True, padx=20, pady=8)
 
-        # 1. 顶部：WorkBuddy 启动加速与排毒卡片
-        self._create_optimizer_card()
+        # 内部动态卡片容器
+        self.cards_content_frame = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
+        self.cards_content_frame.pack(fill="both", expand=True)
 
-        # 2. 中部：各 Agent 孤儿进程监控卡片
+        self._render_agent_cards()
+
+    def _render_agent_cards(self):
+        """动态渲染所有活跃 Agent 监控卡片"""
+        for w in self.cards_content_frame.winfo_children():
+            w.destroy()
+
+        self.target_cards.clear()
         config = load_config()
         targets = config.get("targets", [])
 
+        # 1. 顶部：若包含 WorkBuddy，则挂载专属启动加速与排毒卡片
+        if any(t.get("name") == "WorkBuddy" for t in targets):
+            self._create_optimizer_card(self.cards_content_frame)
+
+        # 2. 中部：各活跃 Agent 孤儿进程监控卡片
         for rule in targets:
             name = rule["name"]
             display_name = rule.get("display_name", name)
             ports = rule.get("ports", [])
-            self._create_agent_card(name, display_name, ports)
+            self._create_agent_card(self.cards_content_frame, name, display_name, ports)
 
-    def _create_optimizer_card(self):
+    def _create_optimizer_card(self, parent_frame):
         """创建 WorkBuddy 启动加速与存储排毒卡片"""
-        card = ctk.CTkFrame(self.scroll_frame, corner_radius=12, fg_color="#18232C")
+        card = ctk.CTkFrame(parent_frame, corner_radius=12, fg_color="#18232C")
         card.pack(fill="x", pady=8, padx=4)
 
         # 左侧：名称与醒目文字状态胶囊
@@ -144,9 +197,9 @@ class AgentCleanerApp(ctk.CTk):
         )
         self.opt_btn.pack(side="right", padx=16)
 
-    def _create_agent_card(self, target_name, display_name, ports):
+    def _create_agent_card(self, parent_frame, target_name, display_name, ports):
         """创建单个 Agent 的仪表盘监控卡片"""
-        card = ctk.CTkFrame(self.scroll_frame, corner_radius=12, fg_color="#1E1E1E")
+        card = ctk.CTkFrame(parent_frame, corner_radius=12, fg_color="#1E1E1E")
         card.pack(fill="x", pady=8, padx=4)
 
         # 左侧：名称与醒目文字状态胶囊
@@ -207,6 +260,129 @@ class AgentCleanerApp(ctk.CTk):
             "ports": ports,
             "matched_data": []
         }
+
+    def sync_agent_catalog_async(self):
+        """用户点击「更新agent目录」时异步执行增量对账（查新装 + 查卸载）"""
+        def _worker():
+            self._update_banner("正在扫描本机环境并更新 Agent 目录...")
+            try:
+                updated_targets, changed, added, removed = discover_and_sync_targets(auto_save=True)
+                def _ui_done():
+                    self._render_agent_cards()
+                    msg_parts = []
+                    if added:
+                        msg_parts.append(f"新增接入: {', '.join(added)}")
+                    if removed:
+                        msg_parts.append(f"自动下架: {', '.join(removed)}")
+                    if msg_parts:
+                        self._update_banner(f"✨ 目录更新完成！{'；'.join(msg_parts)}")
+                    else:
+                        self._update_banner(f"Agent 目录已是最新状态（已监控 {len(updated_targets)} 款工具）。")
+                self.after(0, _ui_done)
+            except Exception as e:
+                self._update_banner(f"❌ 目录更新失败: {e}")
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _open_add_agent_dialog(self):
+        """打开添加自定义 Agent 规则对话框"""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("➕ 添加自定义 Agent")
+        dialog.geometry("460x420")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        content = ctk.CTkFrame(dialog, fg_color="transparent")
+        content.pack(fill="both", expand=True, padx=24, pady=20)
+
+        ctk.CTkLabel(
+            content,
+            text="添加自定义 Agent 规则",
+            font=ctk.CTkFont(size=18, weight="bold")
+        ).pack(anchor="w", pady=(0, 10))
+
+        # 1. 显示名称
+        ctk.CTkLabel(content, text="显示名称（如：Cursor / Windsurf）:", font=ctk.CTkFont(size=12)).pack(anchor="w")
+        entry_name = ctk.CTkEntry(content, width=410, placeholder_text="例如: Cursor")
+        entry_name.pack(fill="x", pady=(2, 10))
+
+        # 2. 进程名 (逗号分隔)
+        ctk.CTkLabel(content, text="监控进程名（逗号分隔）:", font=ctk.CTkFont(size=12)).pack(anchor="w")
+        entry_procs = ctk.CTkEntry(content, width=410, placeholder_text="例如: Cursor.exe, cursor.exe, node.exe")
+        entry_procs.pack(fill="x", pady=(2, 10))
+
+        # 3. 路径关键词 (用于防误杀隔离)
+        ctk.CTkLabel(content, text="安装路径关键词（用于防误杀隔离）:", font=ctk.CTkFont(size=12)).pack(anchor="w")
+        entry_paths = ctk.CTkEntry(content, width=410, placeholder_text="例如: cursor, Programs\\cursor")
+        entry_paths.pack(fill="x", pady=(2, 10))
+
+        # 4. 占用端口 (选填)
+        ctk.CTkLabel(content, text="监听端口（选填，逗号分隔）:", font=ctk.CTkFont(size=12)).pack(anchor="w")
+        entry_ports = ctk.CTkEntry(content, width=410, placeholder_text="例如: 8080 (选填)")
+        entry_ports.pack(fill="x", pady=(2, 16))
+
+        # 按钮栏
+        btn_box = ctk.CTkFrame(content, fg_color="transparent")
+        btn_box.pack(fill="x", pady=(8, 0))
+
+        def _save_action():
+            d_name = entry_name.get().strip()
+            raw_procs = entry_procs.get().strip()
+            raw_paths = entry_paths.get().strip()
+            raw_ports = entry_ports.get().strip()
+
+            if not d_name or not raw_procs or not raw_paths:
+                self._update_banner("⚠️ 添加失败：显示名称、进程名和路径关键词必填！")
+                dialog.destroy()
+                return
+
+            procs_list = [p.strip() for p in raw_procs.split(",") if p.strip()]
+            paths_list = [p.strip() for p in raw_paths.split(",") if p.strip()]
+            ports_list = []
+            if raw_ports:
+                for p in raw_ports.split(","):
+                    p = p.strip()
+                    if p.isdigit():
+                        ports_list.append(int(p))
+
+            new_rule = {
+                "name": d_name.lower().replace(" ", "_"),
+                "display_name": d_name,
+                "install_path_keywords": paths_list,
+                "process_names": procs_list,
+                "ports": ports_list
+            }
+
+            cfg = load_config()
+            cur_targets = [t for t in cfg.get("targets", []) if t.get("name") != new_rule["name"]]
+            cur_targets.append(new_rule)
+            cfg["targets"] = cur_targets
+            save_config(cfg)
+
+            self._render_agent_cards()
+            self._update_banner(f"✨ 已成功将自定义目标 [{d_name}] 录入并激活监控！")
+            dialog.destroy()
+
+        save_btn = ctk.CTkButton(
+            btn_box,
+            text="保存并加入监控",
+            fg_color="#1F6AA5",
+            hover_color="#144870",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            command=_save_action
+        )
+        save_btn.pack(side="right", padx=(10, 0))
+
+        cancel_btn = ctk.CTkButton(
+            btn_box,
+            text="取消",
+            fg_color="#444444",
+            hover_color="#555555",
+            font=ctk.CTkFont(size=13),
+            command=dialog.destroy
+        )
+        cancel_btn.pack(side="right")
 
     def _build_footer(self):
         """底部控制栏与战报区域"""
@@ -378,6 +554,8 @@ class AgentCleanerApp(ctk.CTk):
 
     def _worker_refresh_optimizer(self):
         """后台探测 WorkBuddy 存储与插件状态"""
+        if not hasattr(self, "opt_badge"):
+            return
         try:
             stats = get_storage_stats()
             self.after(0, self._update_optimizer_display, stats)

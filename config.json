@@ -3,11 +3,15 @@
     "graceful_timeout_sec": 2,
     "require_admin": true
   },
-  "targets": [
+  "preset_catalog": [
     {
       "name": "WorkBuddy",
       "display_name": "WorkBuddy",
-      "install_path_keywords": ["WorkBuddy", "workbuddy", ".workbuddy"],
+      "install_path_keywords": [
+        "WorkBuddy",
+        "workbuddy",
+        ".workbuddy"
+      ],
       "process_names": [
         "WorkBuddy.exe",
         "workbuddy.exe",
@@ -19,7 +23,82 @@
         "qm-helper.exe",
         "editor_server.exe"
       ],
-      "ports": [3080]
+      "ports": [
+        3080
+      ],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Programs\\WorkBuddy\\WorkBuddy.exe",
+        "%USERPROFILE%\\.workbuddy",
+        "C:\\Program Files\\WorkBuddy\\WorkBuddy.exe"
+      ]
+    },
+    {
+      "name": "ZCode",
+      "display_name": "ZCode",
+      "install_path_keywords": [
+        "ZCode",
+        "zcode"
+      ],
+      "process_names": [
+        "ZCode.exe",
+        "zcode.exe",
+        "node.exe"
+      ],
+      "ports": [],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Programs\\ZCode\\ZCode.exe",
+        "%PROGRAMFILES%\\ZCode\\ZCode.exe",
+        "%APPDATA%\\ZCode"
+      ]
+    }
+  ],
+  "targets": [
+    {
+      "name": "WorkBuddy",
+      "display_name": "WorkBuddy",
+      "install_path_keywords": [
+        "WorkBuddy",
+        "workbuddy",
+        ".workbuddy"
+      ],
+      "process_names": [
+        "WorkBuddy.exe",
+        "workbuddy.exe",
+        "node.exe",
+        "editor_sdk.exe",
+        "OpenConsole.exe",
+        "conpty.exe",
+        "agently-cli.exe",
+        "qm-helper.exe",
+        "editor_server.exe"
+      ],
+      "ports": [
+        3080
+      ],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Programs\\WorkBuddy\\WorkBuddy.exe",
+        "%USERPROFILE%\\.workbuddy",
+        "C:\\Program Files\\WorkBuddy\\WorkBuddy.exe"
+      ]
+    },
+    {
+      "name": "ZCode",
+      "display_name": "ZCode",
+      "install_path_keywords": [
+        "ZCode",
+        "zcode"
+      ],
+      "process_names": [
+        "ZCode.exe",
+        "zcode.exe",
+        "node.exe"
+      ],
+      "ports": [],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Programs\\ZCode\\ZCode.exe",
+        "%PROGRAMFILES%\\ZCode\\ZCode.exe",
+        "%APPDATA%\\ZCode"
+      ]
     }
   ]
 }

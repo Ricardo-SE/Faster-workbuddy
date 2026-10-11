@@ -42,6 +42,76 @@ def load_config():
         return json.load(f)
 
 
+def save_config(config_data):
+    """保存配置数据至外部或本地 config.json"""
+    config_file = get_config_path()
+    with open(config_file, "w", encoding="utf-8") as f:
+        json.dump(config_data, f, indent=2, ensure_ascii=False)
+
+
+def check_agent_installed(agent_rule):
+    """
+    检查指定 Agent 是否安装在当前系统（毫秒级路径校验）：
+    支持环境变量展开（如 %LOCALAPPDATA%, %APPDATA%, %USERPROFILE%）
+    """
+    detect_paths = agent_rule.get("detect_paths", [])
+    if not detect_paths:
+        return True, None
+
+    for raw_path in detect_paths:
+        expanded = os.path.expandvars(raw_path)
+        if os.path.exists(expanded):
+            return True, expanded
+    return False, None
+
+
+def discover_and_sync_targets(auto_save=True):
+    """
+    启动自动嗅探与极速自愈引擎（增量对账）：
+    1. 自动嗅探（查新装）：遍历 preset_catalog，若本机已安装且未在 targets 中，自动激活。
+    2. 极速自愈（查卸载）：遍历 targets 中有 detect_paths 的项，若已彻底卸载（路径不存在），自动下架。
+       （安全边界：保留用户手动添加的未配置 detect_paths 的自定义项）
+    返回: (updated_targets, changed_flag, added_names, removed_names)
+    """
+    config = load_config()
+    presets = config.get("preset_catalog", [])
+    current_targets = config.get("targets", [])
+    changed = False
+    added_names = []
+    removed_names = []
+
+    # 1. 自动嗅探新增（查新装）
+    current_names = {t.get("name") for t in current_targets}
+    for preset in presets:
+        name = preset.get("name")
+        if name and name not in current_names:
+            is_installed, _ = check_agent_installed(preset)
+            if is_installed:
+                current_targets.append(preset)
+                current_names.add(name)
+                added_names.append(preset.get("display_name", name))
+                changed = True
+
+    # 2. 极速自愈（查卸载，下架已卸载的 Agent，保留用户手动添加项）
+    survived_targets = []
+    for target in current_targets:
+        if target.get("detect_paths"):
+            is_installed, _ = check_agent_installed(target)
+            if not is_installed:
+                changed = True
+                removed_names.append(target.get("display_name", target.get("name")))
+                continue  # 路径已消失，跳过即自动下架
+        survived_targets.append(target)
+
+    current_targets = survived_targets
+
+    if changed and auto_save:
+        config["targets"] = current_targets
+        save_config(config)
+
+    return current_targets, changed, added_names, removed_names
+
+
 def match_process_to_target(proc, target_rule):
     """
     多维交叉比对单个进程是否属于目标 Agent：
