@@ -50,6 +50,124 @@
         "%PROGRAMFILES%\\ZCode\\ZCode.exe",
         "%APPDATA%\\ZCode"
       ]
+    },
+    {
+      "name": "Trae",
+      "display_name": "Trae",
+      "install_path_keywords": [
+        "Trae",
+        "trae",
+        "Trae CN"
+      ],
+      "process_names": [
+        "Trae.exe",
+        "trae.exe",
+        "node.exe"
+      ],
+      "ports": [],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Programs\\Trae\\Trae.exe",
+        "%LOCALAPPDATA%\\Programs\\Trae CN\\Trae.exe",
+        "%PROGRAMFILES%\\Trae\\Trae.exe",
+        "%APPDATA%\\Trae"
+      ]
+    },
+    {
+      "name": "Qoder",
+      "display_name": "Qoder IDE",
+      "install_path_keywords": [
+        "Qoder",
+        "qoder",
+        "Qoder IDE"
+      ],
+      "process_names": [
+        "Qoder IDE.exe",
+        "Qoder.exe",
+        "qoder.exe",
+        "Lingma.exe",
+        "node.exe"
+      ],
+      "ports": [],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Programs\\Qoder IDE\\Qoder IDE.exe",
+        "%LOCALAPPDATA%\\Programs\\Qoder\\Qoder.exe",
+        "%PROGRAMFILES%\\Qoder IDE\\Qoder IDE.exe",
+        "%APPDATA%\\Qoder IDE",
+        "%USERPROFILE%\\.qoder"
+      ]
+    },
+    {
+      "name": "KimiCode",
+      "display_name": "Kimi Code",
+      "install_path_keywords": [
+        "Kimi Code",
+        "kimi-code",
+        "kimi"
+      ],
+      "process_names": [
+        "Kimi Code.exe",
+        "kimi-code.exe",
+        "kimi.exe",
+        "node.exe"
+      ],
+      "ports": [],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Programs\\Kimi Code\\Kimi Code.exe",
+        "%LOCALAPPDATA%\\Programs\\kimi-code\\kimi-code.exe",
+        "%PROGRAMFILES%\\Kimi Code\\Kimi Code.exe",
+        "%APPDATA%\\Kimi Code",
+        "%USERPROFILE%\\.kimi"
+      ]
+    },
+    {
+      "name": "DeepSeek_Harness",
+      "display_name": "DeepSeek Harness (dsh)",
+      "install_path_keywords": [
+        "dsh",
+        "@deepseek-ai",
+        "deepseek"
+      ],
+      "process_names": [
+        "node.exe"
+      ],
+      "cmdline_keywords": [
+        "dsh",
+        "@deepseek-ai/dsh",
+        "deepseek"
+      ],
+      "ports": [
+        3080
+      ],
+      "detect_paths": [
+        "%USERPROFILE%\\.dsh",
+        "%APPDATA%\\npm\\dsh.cmd",
+        "%APPDATA%\\npm\\node_modules\\@deepseek-ai\\dsh",
+        "%LOCALAPPDATA%\\dsh"
+      ]
+    },
+    {
+      "name": "ChatGPT_Codex",
+      "display_name": "ChatGPT / Codex",
+      "install_path_keywords": [
+        "ChatGPT",
+        "Codex",
+        "OpenAI"
+      ],
+      "process_names": [
+        "ChatGPT.exe",
+        "Codex.exe",
+        "chatgpt.exe",
+        "codex.exe"
+      ],
+      "ports": [],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Programs\\ChatGPT\\ChatGPT.exe",
+        "%LOCALAPPDATA%\\Programs\\Codex\\Codex.exe",
+        "%PROGRAMFILES%\\ChatGPT\\ChatGPT.exe",
+        "%PROGRAMFILES%\\Codex\\Codex.exe",
+        "%APPDATA%\\ChatGPT",
+        "%APPDATA%\\Codex"
+      ]
     }
   ],
   "targets": [
@@ -98,6 +216,32 @@
         "%LOCALAPPDATA%\\Programs\\ZCode\\ZCode.exe",
         "%PROGRAMFILES%\\ZCode\\ZCode.exe",
         "%APPDATA%\\ZCode"
+      ]
+    },
+    {
+      "name": "DeepSeek_Harness",
+      "display_name": "DeepSeek Harness (dsh)",
+      "install_path_keywords": [
+        "dsh",
+        "@deepseek-ai",
+        "deepseek"
+      ],
+      "process_names": [
+        "node.exe"
+      ],
+      "cmdline_keywords": [
+        "dsh",
+        "@deepseek-ai/dsh",
+        "deepseek"
+      ],
+      "ports": [
+        3080
+      ],
+      "detect_paths": [
+        "%USERPROFILE%\\.dsh",
+        "%APPDATA%\\npm\\dsh.cmd",
+        "%APPDATA%\\npm\\node_modules\\@deepseek-ai\\dsh",
+        "%LOCALAPPDATA%\\dsh"
       ]
     }
   ]

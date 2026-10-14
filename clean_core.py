@@ -12,6 +12,7 @@ import os
 import sys
 import time
 import psutil
+import shutil
 
 # 确保在 Windows 控制台下支持 UTF-8 打印输出
 if sys.platform.startswith("win"):
@@ -34,33 +35,87 @@ def get_config_path():
 
 
 def load_config():
-    """读取配置文件 config.json"""
+    """读取配置文件 config.json，具备防御性自愈兜底"""
     config_file = get_config_path()
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"找不到配置文件: {config_file}")
-    with open(config_file, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        # 若主配置损坏，尝试读取同级备份文件 config.json.bak
+        bak_file = f"{config_file}.bak"
+        if os.path.exists(bak_file):
+            try:
+                with open(bak_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        raise e
 
 
 def save_config(config_data):
-    """保存配置数据至外部或本地 config.json"""
+    """
+    保存配置数据至外部或本地 config.json：
+    【原子写入设计 (Atomic Write)】
+    先写入同级临时文件并强制刷盘 (fsync)，再通过 os.replace 原子覆盖，
+    彻底消除写盘中途断电/强杀导致原配置被截断为 0 字节的灾难性隐患。
+    """
     config_file = get_config_path()
-    with open(config_file, "w", encoding="utf-8") as f:
-        json.dump(config_data, f, indent=2, ensure_ascii=False)
+    config_dir = os.path.dirname(os.path.abspath(config_file))
+    temp_file = os.path.join(config_dir, f".{os.path.basename(config_file)}.{os.getpid()}_{time.time_ns()}.tmp")
+    try:
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(config_data, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())  # 强制从操作系统页缓存刷入物理磁盘
+
+        # 备份一份有效的配置作为恢复底牌
+        bak_file = f"{config_file}.bak"
+        if os.path.exists(config_file):
+            try:
+                shutil.copy2(config_file, bak_file)
+            except OSError:
+                pass
+
+        # 原子重命名覆盖（Windows 与 POSIX 均具备原子性与强覆盖性）
+        os.replace(temp_file, config_file)
+    except Exception:
+        if os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except OSError:
+                pass
+        raise
 
 
 def check_agent_installed(agent_rule):
     """
     检查指定 Agent 是否安装在当前系统（毫秒级路径校验）：
-    支持环境变量展开（如 %LOCALAPPDATA%, %APPDATA%, %USERPROFILE%）
+    1. 支持环境变量展开（如 %LOCALAPPDATA%, %APPDATA%, %USERPROFILE%）
+    2. 防御性拦截 Windows 虚拟设备保留名（CON, PRN, AUX, NUL, COM, LPT）
+    3. 严格要求目标必须是物理磁盘上真实存在的文件或目录
     """
     detect_paths = agent_rule.get("detect_paths", [])
     if not detect_paths:
         return True, None
 
+    # Windows 固有虚拟字符设备名黑名单
+    DOS_DEVICES = {"CON", "PRN", "AUX", "NUL",
+                   "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+                   "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}
+
     for raw_path in detect_paths:
-        expanded = os.path.expandvars(raw_path)
-        if os.path.exists(expanded):
+        if not raw_path or not isinstance(raw_path, str):
+            continue
+        expanded = os.path.expandvars(raw_path).strip()
+        # 拦截 DOS 设备保留名
+        base_name = os.path.basename(expanded).upper().split(".")[0]
+        if base_name in DOS_DEVICES:
+            continue
+
+        # 物理存在性校验：必须是真实的文件或真实的目录
+        if os.path.exists(expanded) and (os.path.isfile(expanded) or os.path.isdir(expanded)):
             return True, expanded
     return False, None
 

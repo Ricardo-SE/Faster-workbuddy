@@ -7,7 +7,7 @@
 [![GUI CustomTkinter](https://img.shields.io/badge/GUI-CustomTkinter-blueviolet.svg)](https://github.com/TomSchimansky/CustomTkinter)
 [![License MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-[免安装版下载 (Releases)](../../releases) · [源码运行指南](#方式二clone-源码运行适合开发者) · [模块功能清单](#模块功能清单)
+[免安装版下载 (Releases)](../../releases) · [源码运行指南](#方式二clone-源码运行适合开发者) · [模块功能清单](#模块功能清单) · [更新说明](#v11-泛用化更新说明)
 
 ---
 
@@ -22,7 +22,17 @@
 很多依赖 AI 编程辅助工具的开发者都曾遇到类似情况：明明任务已经完成、主界面也已点叉关闭，但由底层 Electron 衍生出的 `node.exe`、`editor_sdk.exe`、`OpenConsole.exe` 等子进程却沦为了孤儿进程，常年在后台静默驻留，霸占 1GB 至 2GB 以上的物理内存。日积月累下，本地数据目录堆积了成百上千个历史 Shell 快照与废弃调试 Traces，导致客户端冷启动从几秒拖慢至数十秒。
 
 ### 设计初衷
-本项目作为一个轻量，独立的agent清洁工具，专门解决项目完成关闭窗口后agent仍然在后台占用大量内存，历史垃圾日志堆积导致启动缓慢的问题
+本项目作为一个轻量，独立的agent清洁工具，专门解决项目完成关闭窗口后agent仍然在后台占用大量内存，历史垃圾日志堆积导致启动缓慢的问题。
+
+---
+
+## v1.1 泛用化更新说明
+
+在保持对 WorkBuddy 深度优化的同时，本版本扩展为通用 Agent 清理工具：
+
+1. **支持更多主流 Agent**：新增对 ZCode、Trae、Qoder、KimiCode、DeepSeek Harness、ChatGPT Codex 等工具的开箱即用支持。
+2. **自动识别与同步**：开机自动检测本机已安装的 Agent 并展示对应卡片，卸载后自动隐藏；用户自定义添加的目标始终安全保留。
+3. **配置防丢保护**：优化了配置保存机制，即使突发断电或程序异常退出，也不会导致配置文件损坏或丢失。
 
 ---
 
@@ -91,7 +101,7 @@
 
 ## 后续演进规划
 
-当前 v1.0 专版针对 WorkBuddy 进行了深度定制。后续版本将进一步将清理规则抽象为可插拔的 Adapter 适配器架构，逐步扩展支持 zcode, qoder, trae 等各类 AI 编程工具与常驻 Agent 的全生命周期管理。
+针对更多 Agent 做启动加速、管理缓存的适配。
 
 ---
 
