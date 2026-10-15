@@ -27,7 +27,7 @@ class AgentCleanerApp(ctk.CTk):
         super().__init__()
 
         # 窗口基本属性
-        self.title("Agent Cleaner - 多 Agent 孤儿清理与启动加速")
+        self.title("Agent Cleaner - AI 助手后台清理与电脑加速")
         self.geometry("660x490")
         self.minsize(620, 400)
 
@@ -76,7 +76,7 @@ class AgentCleanerApp(ctk.CTk):
 
         sub_label = ctk.CTkLabel(
             title_box,
-            text="AI Agent 进程孤儿清理 · 物理内存回收 · 多生态规则感知",
+            text="一键彻底关闭退出残留 · 释放电脑内存 · 告别卡顿",
             font=ctk.CTkFont(size=12),
             text_color="#888888"
         )
@@ -228,11 +228,10 @@ class AgentCleanerApp(ctk.CTk):
         )
         badge_label.pack(side="left")
 
-        # 详细参数信息（内存占用、进程数量、监听端口）
-        port_str = f" | 端口: {','.join(map(str, ports))}" if ports else ""
+        # 详细参数信息（内存占用、程序数量，隐藏技术端口）
         info_label = ctk.CTkLabel(
             left_box,
-            text=f"内存检测中...{port_str}",
+            text="正在检测后台状态...",
             font=ctk.CTkFont(size=13),
             text_color="#999999"
         )
@@ -622,9 +621,6 @@ class AgentCleanerApp(ctk.CTk):
         if not controls:
             return
 
-        ports = controls.get("ports", [])
-        port_str = f" | 端口: {','.join(map(str, ports))}" if ports else ""
-
         if not matched:
             # 状态 1：正常干净
             controls["badge"].configure(
@@ -632,7 +628,7 @@ class AgentCleanerApp(ctk.CTk):
                 fg_color="#1E392A",
                 text_color="#2ECC71"
             )
-            controls["info"].configure(text=f"后台干净 · 无孤儿常驻 (0 MB){port_str}")
+            controls["info"].configure(text="后台很清爽 · 没有偷偷运行的程序 (0 MB)")
             controls["btn"].configure(state="disabled", text="无需清理", fg_color="#333333")
         else:
             total_mb = sum(m["memory_mb"] for m in matched)
@@ -646,18 +642,18 @@ class AgentCleanerApp(ctk.CTk):
                     text_color="#F1C40F"
                 )
                 controls["info"].configure(
-                    text=f"前台窗口打开中 · 占用 {total_mb:.1f} MB ({len(matched)} 个进程){port_str}"
+                    text=f"正在使用中 · 占用 {total_mb:.1f} MB 内存 ({len(matched)} 个程序)"
                 )
                 controls["btn"].configure(state="normal", text="强退清理", fg_color="#D32F2F", hover_color="#9A0007")
             else:
-                # 状态 3：孤儿异常常驻（红色高危）
+                # 状态 3：后台偷跑/未关干净（红色高危）
                 controls["badge"].configure(
-                    text="  🔴 异常常驻  ",
+                    text="  🔴 没关干净  ",
                     fg_color="#441E1E",
                     text_color="#FF4D4F"
                 )
                 controls["info"].configure(
-                    text=f"孤儿在后台偷吃内存 · 占用 {total_mb:.1f} MB ({len(matched)} 个进程){port_str}"
+                    text=f"软件已关但后台未退净 · 霸占 {total_mb:.1f} MB 内存 ({len(matched)} 个隐蔽程序)"
                 )
                 controls["btn"].configure(state="normal", text="立即清理", fg_color="#1F6AA5", hover_color="#144870")
 
@@ -675,7 +671,7 @@ class AgentCleanerApp(ctk.CTk):
 
     def _worker_clean(self, target_names):
         self.is_cleaning = True
-        self._update_banner("正在执行优雅退出与内存回收，请稍候...")
+        self._update_banner("正在彻底关闭后台残留程序并释放内存，请稍候...")
 
         all_matched = []
         for name in target_names:
@@ -683,7 +679,7 @@ class AgentCleanerApp(ctk.CTk):
             all_matched.extend(matched)
 
         if not all_matched:
-            self._update_banner("未发现需要清理的孤儿进程。")
+            self._update_banner("太棒了！当前没有任何没退干净的后台程序。")
             self.is_cleaning = False
             return
 
@@ -692,7 +688,7 @@ class AgentCleanerApp(ctk.CTk):
         count, freed_mb = clean_processes(all_matched, timeout=timeout)
 
         # 战报输出
-        msg = f"🎉 战报：成功清理 {count} 个孤儿进程，累计释放内存 {freed_mb:.2f} MB！"
+        msg = f"🎉 清理成功：已彻底关闭 {count} 个残留后台程序，帮你腾出 {freed_mb:.2f} MB 内存！"
         self._update_banner(msg)
 
         # 清理后自动重新探测刷新

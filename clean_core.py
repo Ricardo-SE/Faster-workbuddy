@@ -1,5 +1,5 @@
 """
-clean_core.py — AI Agent 后台孤儿进程探测与清理核心引擎
+clean_core.py — AI Agent 后台残留程序探测与清理核心引擎
 职责：
 1. 读取 config.json 配置规则（解耦）。
 2. 安全多维扫描匹配目标进程（路径 + 命令行 + 进程名交叉验证，杜绝误杀）。
@@ -274,9 +274,9 @@ def clean_processes(matched_list, timeout=2):
     procs_to_kill = [item["proc"] for item in matched_list]
     total_memory_mb = sum(item["memory_mb"] for item in matched_list)
 
-    print(f"\n[清理开始] 发现 {len(matched_list)} 个目标孤儿进程，总内存占用: {total_memory_mb:.2f} MB")
+    print(f"\n[清理开始] 发现 {len(matched_list)} 个后台残留程序，总内存占用: {total_memory_mb:.2f} MB")
     for item in matched_list:
-        win_status = " [带前台窗口]" if item.get("has_window") else " [后台孤儿]"
+        win_status = " [带前台窗口]" if item.get("has_window") else " [后台残留]"
         print(f"  -> PID: {item['pid']:<6} | 进程: {item['name']:<15} | 内存: {item['memory_mb']:>6.2f} MB{win_status}")
 
     # 1. 尝试温和退出 (SIGTERM)
@@ -291,7 +291,7 @@ def clean_processes(matched_list, timeout=2):
     gone, alive = psutil.wait_procs(procs_to_kill, timeout=timeout)
     print(f"  -> 成功优雅退出: {len(gone)} 个进程")
 
-    # 2. 对顽固未退出的孤儿执行强杀 (SIGKILL)
+    # 2. 对顽固未退出的残留程序执行强杀 (SIGKILL)
     if alive:
         print(f"\n[步骤 2/2] 警告：尚有 {len(alive)} 个顽固进程超时未退，启动强制杀死 (SIGKILL)...")
         for p in alive:
@@ -303,7 +303,7 @@ def clean_processes(matched_list, timeout=2):
         # 再次确认回收
         psutil.wait_procs(alive, timeout=1)
 
-    print("\n[清理完毕] 所有目标孤儿进程已彻底清除，句柄与端口已释放！")
+    print("\n[清理完毕] 所有目标残留程序已彻底清除，句柄与端口已释放！")
     return len(matched_list), total_memory_mb
 
 
@@ -316,7 +316,7 @@ if __name__ == "__main__":
 
     matched = scan_target_processes(target)
     if not matched:
-        print(f"\n[扫描结果] 未发现正在运行的 {target} 孤儿进程。")
+        print(f"\n[扫描结果] 未发现正在运行的 {target} 残留程序。")
     else:
         # 检查是否有正在运行的前台窗口（防手抖误杀）
         active_windows = []
@@ -338,7 +338,7 @@ if __name__ == "__main__":
                 print("\n[安全拦截] 清理已取消，保护正在使用的前台工作。")
                 sys.exit(0)
 
-        print(f"\n[扫描结果] 命中 {len(matched)} 个孤儿进程！")
+        print(f"\n[扫描结果] 命中 {len(matched)} 个后台残留程序！")
         cfg = load_config()
         timeout = cfg.get("settings", {}).get("graceful_timeout_sec", 2)
         count, freed_mb = clean_processes(matched, timeout=timeout)
