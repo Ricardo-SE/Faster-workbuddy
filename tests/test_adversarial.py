@@ -141,6 +141,43 @@ class TestAdversarialHarness(unittest.TestCase):
         self.assertIsNone(path)
         print(f"  [PASS] 保留名与路径穿越探测返回: installed={installed}, path={path}，0 误判，0 异常穿透！")
 
+    def test_tc1_4_glob_wildcard_detection_and_msix_resilience(self):
+        """TC-1.4: 通配符嗅探能力与 MSIX 动态包族路径韧性验证"""
+        print("\n>>> [TC-1.4 投毒/嗅探] 验证通配符 (*, ?) 路径匹配与保留设备拦截...")
+        # 1. 在沙箱中创建模拟的 MSIX 动态目录
+        pkg_dir = os.path.join(self.sandbox_dir, "Packages", "MockStoreApp_abcdef123456")
+        os.makedirs(pkg_dir, exist_ok=True)
+
+        # 2. 正向验证：通配符成功匹配
+        wildcard_rule = {
+            "name": "MockStoreApp",
+            "detect_paths": [
+                os.path.join(self.sandbox_dir, "Packages", "MockStoreApp_*")
+            ]
+        }
+        installed, path = clean_core.check_agent_installed(wildcard_rule)
+        self.assertTrue(installed, "死线违背：通配符未能嗅探出存在的目录！")
+        self.assertEqual(path, pkg_dir)
+
+        # 3. 逆向验证：不存在的通配符
+        ghost_rule = {
+            "name": "GhostStoreApp",
+            "detect_paths": [
+                os.path.join(self.sandbox_dir, "Packages", "GhostApp_*")
+            ]
+        }
+        installed_ghost, _ = clean_core.check_agent_installed(ghost_rule)
+        self.assertFalse(installed_ghost, "死线违背：不存在的通配符被误判为存在！")
+
+        # 4. 防御验证：带通配符的 DOS 设备名
+        dos_wildcard_rule = {
+            "name": "DosExploit",
+            "detect_paths": ["CON*", "PRN?", "NUL*"]
+        }
+        installed_dos, _ = clean_core.check_agent_installed(dos_wildcard_rule)
+        self.assertFalse(installed_dos, "死线违背：带通配符的 DOS 设备名被穿透！")
+        print(f"  [PASS] 通配符嗅探精准命中，且 DOS 设备名变体被 100% 拦截！")
+
     # ========================================================================
     # 板斧二：时空踩踏 (Concurrency & Race)
     # ========================================================================

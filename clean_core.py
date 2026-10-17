@@ -13,6 +13,7 @@ import sys
 import time
 import psutil
 import shutil
+import glob
 
 # 确保在 Windows 控制台下支持 UTF-8 打印输出
 if sys.platform.startswith("win"):
@@ -94,7 +95,8 @@ def check_agent_installed(agent_rule):
     检查指定 Agent 是否安装在当前系统（毫秒级路径校验）：
     1. 支持环境变量展开（如 %LOCALAPPDATA%, %APPDATA%, %USERPROFILE%）
     2. 防御性拦截 Windows 虚拟设备保留名（CON, PRN, AUX, NUL, COM, LPT）
-    3. 严格要求目标必须是物理磁盘上真实存在的文件或目录
+    3. 支持通配符嗅探（* 与 ?），兼容微软商店 (MSIX/UWP) 动态包族目录
+    4. 严格要求目标必须是物理磁盘上真实存在的文件或目录
     """
     detect_paths = agent_rule.get("detect_paths", [])
     if not detect_paths:
@@ -109,14 +111,27 @@ def check_agent_installed(agent_rule):
         if not raw_path or not isinstance(raw_path, str):
             continue
         expanded = os.path.expandvars(raw_path).strip()
-        # 拦截 DOS 设备保留名
-        base_name = os.path.basename(expanded).upper().split(".")[0]
+        # 拦截 DOS 设备保留名（含通配符剥离校验）
+        base_name = os.path.basename(expanded).upper().split(".")[0].rstrip("*? ")
         if base_name in DOS_DEVICES:
             continue
 
-        # 物理存在性校验：必须是真实的文件或真实的目录
-        if os.path.exists(expanded) and (os.path.isfile(expanded) or os.path.isdir(expanded)):
-            return True, expanded
+        # 支持通配符嗅探（如 %LOCALAPPDATA%\Packages\OpenAI.Codex_*）
+        if "*" in expanded or "?" in expanded:
+            try:
+                matched_items = glob.glob(expanded)
+                for item in matched_items:
+                    item_base = os.path.basename(item).upper().split(".")[0]
+                    if item_base in DOS_DEVICES:
+                        continue
+                    if os.path.exists(item) and (os.path.isfile(item) or os.path.isdir(item)):
+                        return True, item
+            except (OSError, ValueError):
+                pass
+        else:
+            # 物理存在性校验：必须是真实的文件或真实的目录
+            if os.path.exists(expanded) and (os.path.isfile(expanded) or os.path.isdir(expanded)):
+                return True, expanded
     return False, None
 
 

@@ -161,7 +161,8 @@
       "install_path_keywords": [
         "ChatGPT",
         "Codex",
-        "OpenAI"
+        "OpenAI",
+        "OpenAI.Codex"
       ],
       "process_names": [
         "ChatGPT.exe",
@@ -171,6 +172,9 @@
       ],
       "ports": [],
       "detect_paths": [
+        "%LOCALAPPDATA%\\Packages\\OpenAI.Codex_*",
+        "%LOCALAPPDATA%\\Packages\\OpenAI.Codex_2p2nqsd0c76g0",
+        "%LOCALAPPDATA%\\Packages\\*ChatGPT*",
         "%LOCALAPPDATA%\\Programs\\ChatGPT\\ChatGPT.exe",
         "%LOCALAPPDATA%\\Programs\\Codex\\Codex.exe",
         "%PROGRAMFILES%\\ChatGPT\\ChatGPT.exe",
@@ -262,6 +266,34 @@
         "%APPDATA%\\npm\\dsh.cmd",
         "%APPDATA%\\npm\\node_modules\\@deepseek-ai\\dsh",
         "%LOCALAPPDATA%\\dsh"
+      ]
+    },
+    {
+      "name": "ChatGPT_Codex",
+      "display_name": "ChatGPT / Codex",
+      "install_path_keywords": [
+        "ChatGPT",
+        "Codex",
+        "OpenAI",
+        "OpenAI.Codex"
+      ],
+      "process_names": [
+        "ChatGPT.exe",
+        "Codex.exe",
+        "chatgpt.exe",
+        "codex.exe"
+      ],
+      "ports": [],
+      "detect_paths": [
+        "%LOCALAPPDATA%\\Packages\\OpenAI.Codex_*",
+        "%LOCALAPPDATA%\\Packages\\OpenAI.Codex_2p2nqsd0c76g0",
+        "%LOCALAPPDATA%\\Packages\\*ChatGPT*",
+        "%LOCALAPPDATA%\\Programs\\ChatGPT\\ChatGPT.exe",
+        "%LOCALAPPDATA%\\Programs\\Codex\\Codex.exe",
+        "%PROGRAMFILES%\\ChatGPT\\ChatGPT.exe",
+        "%PROGRAMFILES%\\Codex\\Codex.exe",
+        "%APPDATA%\\ChatGPT",
+        "%APPDATA%\\Codex"
       ]
     }
   ]

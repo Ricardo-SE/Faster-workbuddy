@@ -133,6 +133,13 @@ def save_config(config_data):
 1. **黑名单过滤**：提取 `os.path.basename`，一旦命中系统保留设备名，直接拒绝跳过；
 2. **物理文件/目录校验**：严格要求 `os.path.isfile(path) or os.path.isdir(path)` 必须为真。由于 Windows 虚拟设备既不是普通文件也不是普通目录，幽灵设备被彻底斩草除根。
 
+### 3. 增强：通配符嗅探 (Globbing) 与 MSIX 微软商店沙盒包族适配
+* **痛点**：微软应用商店应用（如官方 ChatGPT 桌面端）安装在受保护的 `WindowsApps`，数据存储在 `%LOCALAPPDATA%\Packages\<包族名>\` 下（如 `OpenAI.Codex_2p2nqsd0c76g0`）。其目录往往带有动态哈希或版本号，固定死路径会导致开机自愈误以为未安装而下架。
+* **架构升级**：
+  1. 在 `check_agent_installed()` 中集成通配符嗅探（`glob.glob`），支持 `%LOCALAPPDATA%\Packages\OpenAI.Codex_*` 与 `*ChatGPT*`；
+  2. 防御性过滤剥离通配符（如 `CON*`、`PRN?`），确保保留设备名变体依然 100% 无法穿透；
+  3. 经过自动化破坏性沙箱测试（TC-1.4）全面验证，确保 0 Panic、0 误杀、0 穿透。
+
 ---
 
 ## ADR-003：双层增量对账自愈架构 (Incremental Diff)
